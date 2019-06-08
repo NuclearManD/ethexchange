@@ -13,10 +13,7 @@ if (typeof window.ethereum === "undefined") {
 
 var ether_price_url = 'https://api.coinmarketcap.com/v1/ticker/ethereum/';
 
-var ether_price, token_contract;
-
-console.log(window.ethereum);
-console.log(Web3);
+var ether_price, token_price=-1, tokens_circulating=-1, token_contract, token_qty=0;
 
 function loadRemoteFile(url){
 	var Http = new XMLHttpRequest();
@@ -38,82 +35,54 @@ function updateEtherPrice(){
 	}
 }
 
-function updateTokenPrice(){
-	
+function updateAccountData(){
+	var acc = web3.eth.accounts[0];
+	document.getElementById("etheradr").textContent = acc;
+	document.getElementById("etheradr").href = "https://etherscan.io/address/"+acc;
+	web3.eth.getBalance(acc,(error,result) => {
+		document.getElementById("ethbalance").textContent = "Ether Balance: " + result/1e+18 + " ETH";
+	});
+}
+
+function contract_read(f){
+	f.call((error, result) => {
+		console.log(result); 
+	});
+}
+
+function updateTokenData(){
+	token_contract.totalSupply.call((error, result) => {
+		tokens_circulating = result.toNumber()/1e+18;
+		document.getElementById("tokentotal").textContent = "Tokens in circulation: "+tokens_circulating;
+		if(token_price!=-1)
+				document.getElementById("tokenmtcap").textContent = "Token market cap: "+tokens_circulating*token_price*ether_price+" USD";
+	});
+	token_contract.balances.call(web3.eth.accounts[0],(error, result) => {
+		document.getElementById("tokbalance").textContent = "Token balance: "+result.toNumber()/1e+18; 
+	});
+	if(typeof token_contract.price === "undefined"){
+		console.log("This contract is outdated and does not expose the 'price' variable.  Token price and market cap will be unavailable.");
+		document.getElementById("tokenprice").textContent = "Token price is unknown.";
+		document.getElementById("tokenmtcap").textContent = "Token market cap is unknown.";
+	}else{
+		token_contract.price.call((error, result) => {
+			token_price = result.toNumber()/100.0;
+			document.getElementById("tokenprice").textContent = "Token price: "+token_price+" ETH";
+			if(tokens_circulating!=-1)
+				document.getElementById("tokenmtcap").textContent = "Token market cap: "+tokens_circulating*token_price*ether_price+" USD";
+		});
+	}
+}
+
+function onModify(event){
+	token_qty = document.getElementById("tokens").value;
+	console.log(token_qty);
+	document.getElementById("value_ether").textContent = "Value in Ethereum: " + token_price*token_qty + " ETH";
+	document.getElementById("value_usd").textContent = "Value in USD: $" + token_price*token_qty*ether_price;
 }
 
 // Metamask injects web3 into the js context.
 
-
-
-/*class App extends React.Component {
-	constructor(props){
-		super(props)
-		this.state = {
-			lastWinner: 0,
-			timer: 0
-		}
-		constructor(props){
-		super(props)
-		this.state = {
-			lastWinner: 0,
-			numberOfBets: 0,
-			minimumBet: 0,
-			totalBet: 0,
-			maxAmountOfBets: 0,
-		}
-		if(typeof web3 != 'undefined'){
-			console.log("Using web3 detected from external source like Metamask")
-			this.web3 = new Web3(web3.currentProvider)
-		}else{
-			this.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
-		}
-		const MyContract = web3.eth.contract(fs.readFileSync('abi.json', 'utf8'))
-		this.state.ContractInstance = MyContract.at("0x1b5C8aFD9739c3D2AF5A4859deC0482a6dF7667D")
-		}
-
-	}
-	
-	voteNumber(number){
-		console.log(number)
-	}
-	render(){
-		updateEtherPrice();
-		return (
-			<div className="main-container">
-				<h1>Bet for your best number and win huge amounts of Ether</h1>
-				<div className="block">
-					<h4>Timer:</h4> &nbsp;
-					<span ref="timer"> {this.state.timer}</span>
-				</div>
-				<div className="block">
-					<h4>Last winner:</h4> &nbsp;
-					<span ref="last-winner">{this.state.lastWinner}</span>
-				</div>
-				<hr/>
-				<h2>Vote for the next number</h2>
-				<ul>
-					<li onClick={() => {this.voteNumber(1)}}>1</li>
-					<li onClick={() => {this.voteNumber(2)}}>2</li>
-					<li onClick={() => {this.voteNumber(3)}}>3</li>
-					<li onClick={() => {this.voteNumber(4)}}>4</li>
-					<li onClick={() => {this.voteNumber(5)}}>5</li>
-					<li onClick={() => {this.voteNumber(6)}}>6</li>
-					<li onClick={() => {this.voteNumber(7)}}>7</li>
-					<li onClick={() => {this.voteNumber(8)}}>8</li>
-					<li onClick={() => {this.voteNumber(9)}}>9</li>
-					<li onClick={() => {this.voteNumber(10)}}>10</li>
-				</ul>
-			</div>
-		)
-	}
-}
-
-ReactDOM.render(
-	<App />,
-	document.querySelector('#root')
-)
-*/
 
 window.addEventListener('load', async () => {
 	window.web3 = new Web3(ethereum);
@@ -131,12 +100,15 @@ window.addEventListener('load', async () => {
 	
 	// load easy stuff first
 	updateEtherPrice();
+	updateAccountData();
 	
 	// make sure token/contract stuff is set up before continuing...
 	var Construct = web3.eth.contract(JSON.parse(loadRemoteFile('abi.json')));
-	token_contract = Construct.at("0x1b5C8aFD9739c3D2AF5A4859deC0482a6dF7667D");
-	console.log(token_contract);
-	updateTokenPrice();
+	token_contract = Construct.at("0x2576643f17da9b5d3ac26e8b96d3e0351118a78d");
+	updateTokenData();
+	
+	// now that we're set up, add the event listener(s)
+	document.getElementById("tokens").onkeydown=onModify;//.addEventListener('change', onModify);
 });
 
 

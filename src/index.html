@@ -13,7 +13,7 @@
 			</div>
 
 			<div id="accountstats" class="row" style="float: right">
-				<p id="tokenmtcap">Loading Ether address...</p>
+				<p><a id="etheradr" href="" target="_blank">Loading Ether address...</a></p>
 				<p id="ethbalance">Loading Ether balance...</p>
 				<p id="tokbalance">Loading token balance...</p>
 			</div>
@@ -26,34 +26,13 @@
 			</div>
 			
 			<div>
-				<p>Token amount to trade: <input type="number" name="tokens" min="0" max="0"></p>
+				<p>Token amount to trade: <input type="number" id="tokens" min="0" max="0"></p>
 				<p id="value_ether">Value in Ethereum: ?</p>
 				<p id="value_usd">Value in USD: ?</p>
 				<button class="btn btn-default" type="button" data-id="0">Buy</button>
 				<button class="btn btn-default" type="button" data-id="0">Sell</button>
 			</div>
 		</div>
-
-		<div id="petTemplate" style="display: none;">
-			<div class="col-sm-6 col-md-4 col-lg-3">
-				<div class="panel panel-default panel-pet">
-					<div class="panel-heading">
-						<h3 class="panel-title">Scrappy</h3>
-					</div>
-					<div class="panel-body">
-						<img alt="140x140" data-src="holder.js/140x140" class="img-rounded img-center" style="width: 100%;" src="https://animalso.com/wp-content/uploads/2017/01/Golden-Retriever_6.jpg" data-holder-rendered="true">
-						<br/><br/>
-						<strong>Breed</strong>: <span class="pet-breed">Golden Retriever</span><br/>
-						<strong>Age</strong>: <span class="pet-age">3</span><br/>
-						<strong>Location</strong>: <span class="pet-location">Warren, MI</span><br/><br/>
-						<button class="btn btn-default btn-adopt" type="button" data-id="0">Adopt</button>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!--<script src="/node_modules/web3/dist/web3.cjs.js"></script>
-		<script src="/node_modules/react-dom/cjs/react-dom.production.min.js"></script>
-		<script src="/node_modules/react/cjs/react.production.min.js"></script>-->
-		<script type="module" src="js/index.js"></script>
+		<script src="js/index.js"></script>
 	</body>
 </html>

@@ -18,7 +18,7 @@ contract HomesCoin is ERC20Interface {
     string public  name;
     uint8 public decimals;
     uint _totalSupply;
-    uint price;
+    uint public price;
     
     address owner;
 

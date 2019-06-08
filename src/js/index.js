@@ -1,26 +1,50 @@
-//import React from '/node_modules/react/cjs/react.production.min.js'
-//import ReactDOM from '/node_modules/react-dom/cjs/react-dom.production.min.js'
-//import Web3 from '/node_modules/web3/dist/web3.cjs.js'
-//import './../css/index.css'
+if (typeof window.ethereum === "undefined") {
+	console.log("Metamask not installed!");
+	
+	// tell the user
+	document.getElementById("container").innerHTML = "<h1>MetaMask is required for EthExchange!</h1><br>" + 
+	"<a href = \"https://metamask.io/\" id=\"lnk\"></a>";
+	var img = document.createElement('img');
+	img.src = "images/metamask.png";
+	document.getElementById("lnk").appendChild(img);
+	throw new Error();
+}
 
-var fs = require('fs');
 
-var ether_price_url_data = { host: 'coinmarketcap-nexuist.rhcloud.com', path: '/api/eth'};
+var ether_price_url = 'https://api.coinmarketcap.com/v1/ticker/ethereum/';
+
+var ether_price, token_contract;
+
+console.log(window.ethereum);
+console.log(Web3);
+
+function loadRemoteFile(url){
+	var Http = new XMLHttpRequest();
+	Http.open("GET", url, false);
+	Http.send();
+	if(Http.status==200){
+		return Http.responseText;
+	}else
+		return null;
+}
 
 function updateEtherPrice(){
-	http.get(ether_price_url_data,
-		function(response) {
-			// Continuously update stream with data
-			var body = '';
-			response.on('data', function(d) { body += d; });
-			response.on('end', function() {
-				// Data reception is done, do whatever with it!
-				var parsed = JSON.parse(body);
-				console.log(parsed.price.usd);
-			});
-		}
-	);
+	var Http = new XMLHttpRequest();
+	Http.open("GET", ether_price_url, true);
+	Http.send();
+	Http.onreadystatechange = (e) => {
+		ether_price = JSON.parse(Http.response)[0].price_usd;
+		document.getElementById("etherprice").textContent = "Ethereum Price: $" +  Math.round(ether_price*100)/100.0 + " USD";
+	}
 }
+
+function updateTokenPrice(){
+	
+}
+
+// Metamask injects web3 into the js context.
+
+
 
 /*class App extends React.Component {
 	constructor(props){
@@ -90,7 +114,30 @@ ReactDOM.render(
 	document.querySelector('#root')
 )
 */
-updateEtherPrice();
+
+window.addEventListener('load', async () => {
+	window.web3 = new Web3(ethereum);
+	try {
+		// Request account access if needed
+		await ethereum.enable();
+	} catch (error) {
+		// User denied account access...
+		console.log("User denied access!");
+		
+		// tell the user
+		document.getElementById("container").innerHTML = "<h1>EthExchange requires access to MetaMask.</h1><br>";
+		throw new Error();
+	}
+	
+	// load easy stuff first
+	updateEtherPrice();
+	
+	// make sure token/contract stuff is set up before continuing...
+	var Construct = web3.eth.contract(JSON.parse(loadRemoteFile('abi.json')));
+	token_contract = Construct.at("0x1b5C8aFD9739c3D2AF5A4859deC0482a6dF7667D");
+	console.log(token_contract);
+	updateTokenPrice();
+});
 
 
 /* Example of using an ethereum contract function:

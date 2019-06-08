@@ -4,13 +4,9 @@
 		<meta charset="utf-8">
 		<title>Trade HOM</title>
 		<link href="css/index.css" rel="stylesheet">
-
-		<script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-		<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-		<script src="https://unpkg.com/lodash@4.16.6"></script>
 	</head>
 	<body>
-		<div class="container">
+		<div class="container" id="container">
 			<div class="row">
 				<h1 class="text-center">Trade HomesCoin</h1>
 				<hr/>
@@ -23,7 +19,8 @@
 			</div>
 
 			<div id="tokenstats" class="row">
-				<p id="tokenprice">Loading price...</p>
+				<p id="etherprice">Loading Ethereum price...</p>
+				<p id="tokenprice">Loading token price...</p>
 				<p id="tokentotal">Loading total tokens...</p>
 				<p id="tokenmtcap">Loading market cap...</p>
 			</div>
@@ -54,9 +51,9 @@
 				</div>
 			</div>
 		</div>
-		<script src="/node_modules/web3/dist/web3.cjs.js"></script>
+		<!--<script src="/node_modules/web3/dist/web3.cjs.js"></script>
 		<script src="/node_modules/react-dom/cjs/react-dom.production.min.js"></script>
-		<script src="/node_modules/react/cjs/react.production.min.js"></script>
+		<script src="/node_modules/react/cjs/react.production.min.js"></script>-->
 		<script type="module" src="js/index.js"></script>
 	</body>
 </html>

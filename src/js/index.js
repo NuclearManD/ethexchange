@@ -1,11 +1,28 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
-import Web3 from 'web3'
-import './../css/index.css'
+//import React from '/node_modules/react/cjs/react.production.min.js'
+//import ReactDOM from '/node_modules/react-dom/cjs/react-dom.production.min.js'
+//import Web3 from '/node_modules/web3/dist/web3.cjs.js'
+//import './../css/index.css'
 
 var fs = require('fs');
 
-class App extends React.Component {
+var ether_price_url_data = { host: 'coinmarketcap-nexuist.rhcloud.com', path: '/api/eth'};
+
+function updateEtherPrice(){
+	http.get(ether_price_url_data,
+		function(response) {
+			// Continuously update stream with data
+			var body = '';
+			response.on('data', function(d) { body += d; });
+			response.on('end', function() {
+				// Data reception is done, do whatever with it!
+				var parsed = JSON.parse(body);
+				console.log(parsed.price.usd);
+			});
+		}
+	);
+}
+
+/*class App extends React.Component {
 	constructor(props){
 		super(props)
 		this.state = {
@@ -37,6 +54,7 @@ class App extends React.Component {
 		console.log(number)
 	}
 	render(){
+		updateEtherPrice();
 		return (
 			<div className="main-container">
 				<h1>Bet for your best number and win huge amounts of Ether</h1>
@@ -71,6 +89,8 @@ ReactDOM.render(
 	<App />,
 	document.querySelector('#root')
 )
+*/
+updateEtherPrice();
 
 
 /* Example of using an ethereum contract function:

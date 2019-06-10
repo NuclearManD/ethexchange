@@ -1,3 +1,5 @@
+var contract_adr = "0xcb874d77bf4cbaeb379d60b9fc0e546edc830e79";
+
 if (typeof window.ethereum === "undefined") {
 	console.log("Metamask not installed!");
 	
@@ -129,6 +131,8 @@ function mainUpdate(){
 				document.getElementById("admin-box").style.display = '';
 				document.getElementById("setprice_btn").onclick=onSetPrice;
 				document.getElementById("setavail_btn").onclick=onSetAvail;
+				document.getElementById("collect_btn").onclick=onCollect;
+				document.getElementById("donate_btn").onclick=onDonate;
 			}else{
 				document.getElementById("admin-box").style.display = 'none';
 			}
@@ -172,6 +176,10 @@ function onSell(event){
 }
 
 function onSetPrice(event){
+	if(document.getElementById("admin_price").value<0){
+		alert("Cannot set the token price to a negative.");
+		return;
+	}
 	token_contract.setPrice(web3.toBigNumber(Math.round(document.getElementById("admin_price").value*10000)), {
 			gas: 300000,
 			from: web3.eth.accounts[0],
@@ -183,6 +191,10 @@ function onSetPrice(event){
 }
 
 function onSetAvail(event){
+	if(document.getElementById("admin_forsale").value<0){
+		alert("Cannot set this value to a negative!");
+		return;
+	}
 	token_contract.forsale(web3.toWei(document.getElementById("admin_forsale").value,'ether'), {
 			gas: 300000,
 			from: web3.eth.accounts[0],
@@ -190,6 +202,37 @@ function onSetAvail(event){
 		}, (err, result) => {
 			// Result is the transaction address of that function
 			console.log("set available: "+result);
+		});
+}
+
+function onCollect(event){
+	if(document.getElementById("collect_qty").value<=0){
+		alert("Must collect more than zero ether!");
+		return;
+	}
+	token_contract.collect(web3.toWei(document.getElementById("collect_qty").value,'ether'),{
+			gas: 300000,
+			from: web3.eth.accounts[0],
+			value: 0
+		}, (err, result) => {
+			// Result is the transaction address of that function
+			console.log("collect: "+result);
+		});
+}
+
+function onDonate(event){
+	if(document.getElementById("donate_qty").value<=0){
+		alert("Cannot donate zero or negative Ether!");
+		return;
+	}
+	web3.eth.sendTransaction({
+			to: contract_adr,
+			gas: 300000,
+			from: web3.eth.accounts[0],
+			value: web3.toWei(document.getElementById("donate_qty").value,'ether')
+		}, (err, result) => {
+			// Result is the transaction address of that function
+			console.log("donate: "+result);
 		});
 }
 
@@ -225,7 +268,7 @@ window.addEventListener('load', async () => {
 	
 	// make sure token/contract stuff is set up before continuing...
 	var Construct = web3.eth.contract(JSON.parse(loadRemoteFile('abi.json')));
-	token_contract = Construct.at("0xcb874d77bf4cbaeb379d60b9fc0e546edc830e79");
+	token_contract = Construct.at(contract_adr);
 	updateTokenData();
 	
 	// now that we're set up, add the event listener(s)

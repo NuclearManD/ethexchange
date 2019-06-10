@@ -16,6 +16,7 @@
 				<p><a id="etheradr" href="" target="_blank">Loading Ether address...</a></p>
 				<p id="ethbalance">Loading Ether balance...</p>
 				<p id="tokbalance">Loading token balance...</p>
+				<p id="tokenavail">Loading token availability...</p>
 			</div>
 
 			<div id="tokenstats" class="row">
@@ -26,11 +27,18 @@
 			</div>
 			
 			<div>
-				<p>Token amount to trade: <input type="number" id="tokens" min="0" max="0"></p>
+				<p>Token amount to trade: <input class="num" type="number" id="tokens" min="0" max="0"></p>
 				<p id="value_ether">Value in Ethereum: ?</p>
 				<p id="value_usd">Value in USD: ?</p>
 				<button class="btn btn-default" type="button" data-id="0" disabled id="buy_btn">Buy</button>
 				<button class="btn btn-default" type="button" data-id="0" disabled id="sell_btn">Sell</button>
+			</div>
+		</div>
+		<div class="admin-box" id="admin-box" style="display:none">
+			<div class="row">
+				<h2>Admin Utilities (You are the contract owner)</h2>
+				<p>Set Token Price: <input class="num" type="number" id="admin_price" min="0" max="0"><button class="btn btn-default" type="button" data-id="0" id="setprice_btn">Set Price</button></p>
+				<p>Set Tokens for sale: <input class="num" type="number" id="admin_forsale" min="0" max="0"><button class="btn btn-default" type="button" data-id="0" id="setavail_btn">Set Availabilty</button></p>
 			</div>
 		</div>
 		<script src="js/index.js"></script>

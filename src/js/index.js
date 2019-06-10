@@ -13,7 +13,7 @@ if (typeof window.ethereum === "undefined") {
 
 var ether_price_url = 'https://api.coinmarketcap.com/v1/ticker/ethereum/';
 
-var ether_price, token_price=-1, tokens_circulating=-1, ether_balance=-1, token_balance=-1, token_contract, token_qty=0;
+var ether_price, token_price=-1, tokens_circulating=-1, ether_balance=-1, token_balance=-1, token_avail=-1, token_contract, token_qty=0;
 
 function loadRemoteFile(url){
 	var Http = new XMLHttpRequest();
@@ -58,6 +58,11 @@ function updateTokenData(){
 		document.getElementById("tokbalance").textContent = "Token balance: "+token_balance;
 		updateButtonStates();
 	});
+	token_contract.get_tradable.call((error, result) => {
+		token_avail = result.toNumber()/1e+18;
+		document.getElementById("tokenavail").textContent = "Tokens for sale: "+token_avail;
+		updateButtonStates();
+	});
 	if(typeof token_contract.price === "undefined"){
 		console.log("This contract is outdated and does not expose the 'price' variable.  Token price and market cap will be unavailable.");
 		document.getElementById("tokenprice").textContent = "Token price is unknown.";
@@ -97,7 +102,7 @@ function updateButtonStates(){
 	}
 	document.getElementById("sell_btn").disabled = false;
 	document.getElementById("buy_btn").disabled = false;
-	if(token_price*token_qty>ether_balance){
+	if(token_price*token_qty>ether_balance || token_avail<token_qty){
 		document.getElementById("buy_btn").disabled = true;
 	}
 	if(token_qty>token_balance){
@@ -105,10 +110,26 @@ function updateButtonStates(){
 	}
 }
 
+var was_admin = false;
+
 function mainUpdate(){
 	
 	updateAccountData();
 	updateTokenData();
+	
+	token_contract.owner.call((error, result) => {
+		var is_admin = result==web3.eth.accounts[0];
+		if(is_admin!=was_admin){
+			if(is_admin){
+				document.getElementById("admin-box").style.display = '';
+				document.getElementById("setprice_btn").onclick=onSetPrice;
+				document.getElementById("setavail_btn").onclick=onSetAvail;
+			}else{
+				document.getElementById("admin-box").style.display = 'none';
+			}
+			was_admin = is_admin;
+		}
+	});
 }
 
 function onModify(event){
@@ -130,7 +151,7 @@ function onBuy(event){
 			value: web3.toWei(token_price*token_qty, 'ether')
 		}, (err, result) => {
 			// Result is the transaction address of that function
-			console.log(result);
+			console.log("buy: "+result);
 		});
 }
 
@@ -141,7 +162,29 @@ function onSell(event){
 			value: 0
 		}, (err, result) => {
 			// Result is the transaction address of that function
-			console.log(result);
+			console.log("sell: "+result);
+		});
+}
+
+function onSetPrice(event){
+	token_contract.setPrice(web3.toBigNumber(Math.round(document.getElementById("admin_price").value*10000)), {
+			gas: 300000,
+			from: web3.eth.accounts[0],
+			value: 0
+		}, (err, result) => {
+			// Result is the transaction address of that function
+			console.log("set price: "+result);
+		});
+}
+
+function onSetAvail(event){
+	token_contract.forsale(web3.toWei(document.getElementById("admin_forsale").value,'ether'), {
+			gas: 300000,
+			from: web3.eth.accounts[0],
+			value: 0
+		}, (err, result) => {
+			// Result is the transaction address of that function
+			console.log("set available: "+result);
 		});
 }
 

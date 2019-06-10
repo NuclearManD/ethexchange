@@ -13,7 +13,7 @@ if (typeof window.ethereum === "undefined") {
 
 var ether_price_url = 'https://api.coinmarketcap.com/v1/ticker/ethereum/';
 
-var ether_price, token_price=-1, tokens_circulating=-1, token_contract, token_qty=0;
+var ether_price, token_price=-1, tokens_circulating=-1, ether_balance=-1, token_balance=-1, token_contract, token_qty=0;
 
 function loadRemoteFile(url){
 	var Http = new XMLHttpRequest();
@@ -40,13 +40,9 @@ function updateAccountData(){
 	document.getElementById("etheradr").textContent = acc;
 	document.getElementById("etheradr").href = "https://etherscan.io/address/"+acc;
 	web3.eth.getBalance(acc,(error,result) => {
+		ether_balance = result/1e+18;
 		document.getElementById("ethbalance").textContent = "Ether Balance: " + result/1e+18 + " ETH";
-	});
-}
-
-function contract_read(f){
-	f.call((error, result) => {
-		console.log(result); 
+		updateButtonStates();
 	});
 }
 
@@ -54,11 +50,13 @@ function updateTokenData(){
 	token_contract.totalSupply.call((error, result) => {
 		tokens_circulating = result.toNumber()/1e+18;
 		document.getElementById("tokentotal").textContent = "Tokens in circulation: "+tokens_circulating;
-		if(token_price!=-1)
-				document.getElementById("tokenmtcap").textContent = "Token market cap: "+tokens_circulating*token_price*ether_price+" USD";
+		if(token_price>0)
+			document.getElementById("tokenmtcap").textContent = "Token market cap: "+tokens_circulating*token_price*ether_price+" USD";
 	});
 	token_contract.balances.call(web3.eth.accounts[0],(error, result) => {
-		document.getElementById("tokbalance").textContent = "Token balance: "+result.toNumber()/1e+18; 
+		token_balance = result.toNumber()/1e+18;
+		document.getElementById("tokbalance").textContent = "Token balance: "+token_balance;
+		updateButtonStates();
 	});
 	if(typeof token_contract.price === "undefined"){
 		console.log("This contract is outdated and does not expose the 'price' variable.  Token price and market cap will be unavailable.");
@@ -66,19 +64,85 @@ function updateTokenData(){
 		document.getElementById("tokenmtcap").textContent = "Token market cap is unknown.";
 	}else{
 		token_contract.price.call((error, result) => {
-			token_price = result.toNumber()/100.0;
+			token_price = result.toNumber()/10000.0;
 			document.getElementById("tokenprice").textContent = "Token price: "+token_price+" ETH";
-			if(tokens_circulating!=-1)
+			updateButtonStates();
+			if(tokens_circulating>0)
 				document.getElementById("tokenmtcap").textContent = "Token market cap: "+tokens_circulating*token_price*ether_price+" USD";
 		});
 	}
 }
 
-function onModify(event){
+function updateAll(){
+	// load easy stuff first
+	updateEtherPrice();
+	updateAccountData();
+	updateTokenData();
+}
+
+function updateButtonStates(){
+	/*token_contract.allowance.call((error, result) => {
+			token_price = result.toNumber()/100.0;
+			document.getElementById("tokenprice").textContent = "Token price: "+token_price+" ETH";
+			updateButtonStates();
+			if(tokens_circulating>0)
+				document.getElementById("tokenmtcap").textContent = "Token market cap: "+tokens_circulating*token_price*ether_price+" USD";
+		});*/
+	var disable = false;
 	token_qty = document.getElementById("tokens").value;
-	console.log(token_qty);
+	if(token_qty==0||ether_balance<0.01){
+		document.getElementById("sell_btn").disabled = true;
+		document.getElementById("buy_btn").disabled = true;
+		return;
+	}
+	document.getElementById("sell_btn").disabled = false;
+	document.getElementById("buy_btn").disabled = false;
+	if(token_price*token_qty>ether_balance){
+		document.getElementById("buy_btn").disabled = true;
+	}
+	if(token_qty>token_balance){
+		document.getElementById("sell_btn").disabled = true;
+	}
+}
+
+function mainUpdate(){
+	
+	updateAccountData();
+	updateTokenData();
+}
+
+function onModify(event){
+	// first check if this buy/sell can be executed
+	updateAccountData();
+	updateTokenData();
+	
+	// now do all the other calculations
+	token_qty = document.getElementById("tokens").value;
+	//console.log(token_qty);
 	document.getElementById("value_ether").textContent = "Value in Ethereum: " + token_price*token_qty + " ETH";
 	document.getElementById("value_usd").textContent = "Value in USD: $" + token_price*token_qty*ether_price;
+}
+
+function onBuy(event){
+	token_contract.buy(web3.toWei(token_qty, 'ether'), {
+			gas: 300000,
+			from: web3.eth.accounts[0],
+			value: web3.toWei(token_price*token_qty, 'ether')
+		}, (err, result) => {
+			// Result is the transaction address of that function
+			console.log(result);
+		});
+}
+
+function onSell(event){
+	token_contract.sell(web3.toWei(token_qty,'ether'), {
+			gas: 300000,
+			from: web3.eth.accounts[0],
+			value: 0
+		}, (err, result) => {
+			// Result is the transaction address of that function
+			console.log(result);
+		});
 }
 
 // Metamask injects web3 into the js context.
@@ -104,11 +168,18 @@ window.addEventListener('load', async () => {
 	
 	// make sure token/contract stuff is set up before continuing...
 	var Construct = web3.eth.contract(JSON.parse(loadRemoteFile('abi.json')));
-	token_contract = Construct.at("0x2576643f17da9b5d3ac26e8b96d3e0351118a78d");
+	token_contract = Construct.at("0xcb874d77bf4cbaeb379d60b9fc0e546edc830e79");
 	updateTokenData();
 	
 	// now that we're set up, add the event listener(s)
-	document.getElementById("tokens").onkeydown=onModify;//.addEventListener('change', onModify);
+	document.getElementById("tokens").oninput=onModify;//.addEventListener('change', onModify);
+	document.getElementById("buy_btn").onclick=onBuy;
+	document.getElementById("sell_btn").onclick=onSell;
+	document.getElementById("sell_btn").disabled = false;
+	document.getElementById("buy_btn").disabled = false;
+	
+	setInterval(mainUpdate, 100);
+	setInterval(updateEtherPrice, 60000);
 });
 
 

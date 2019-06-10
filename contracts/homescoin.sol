@@ -20,7 +20,7 @@ contract HomesCoin is ERC20Interface {
     uint _totalSupply;
     uint public price;
     
-    address owner;
+    address public owner;
 
     mapping(address => uint) public balances;
     mapping(address => mapping(address => uint)) allowed;
@@ -145,31 +145,35 @@ contract HomesCoin is ERC20Interface {
     
     function buy(uint tokens)public payable{
         require(tokens>=100000); // prevents buying and selling absurdly small amounts to cheat the contract arithmetic
-        require(msg.value>=price*tokens/100);
+        require(msg.value>=(price*tokens)/10000);
         require(allowed[owner][address(0)]>=tokens);
         require(balances[owner]>=tokens);
         require(msg.sender!=owner);
         allowed[owner][address(0)]-=tokens;
         balances[owner]-=tokens;
         balances[msg.sender]+=tokens;
-        msg.sender.transfer(msg.value-price*tokens);
+        msg.sender.transfer(msg.value-(price*tokens)/10000);
     }
     
     function sell(uint tokens)public{
         require(tokens>100000); // prevents buying and selling absurdly small amounts to cheat the contract arithmetic
         require(balances[msg.sender]>=tokens);
-        require(address(this).balance>price*tokens/100);
+        require(address(this).balance>price*tokens/10000);
         require(msg.sender!=owner);
         allowed[owner][address(0)]+=tokens;
         balances[owner]+=tokens;
         balances[msg.sender]-=tokens;
-        msg.sender.transfer(price*tokens);
+        msg.sender.transfer((price*tokens)/10000);
     }
     
     function forsale(uint tokens)public{
         require(msg.sender==owner);
         allowed[owner][address(0)] = tokens;
         emit Approval(owner, address(0), tokens);
+    }
+    
+    function get_tradable() public returns (uint tradable){
+        return allowed[owner][address(0)];
     }
     
     function setPrice(uint newPrice) public{

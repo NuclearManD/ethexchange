@@ -176,7 +176,7 @@ contract HomesCoin is ERC20Interface {
         emit Approval(owner, address(0), tokens);
     }
     
-    function get_tradable() public returns (uint tradable){
+    function get_tradable() public view returns (uint tradable){
         return allowed[owner][address(0)];
     }
     

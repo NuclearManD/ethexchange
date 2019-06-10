@@ -36,7 +36,9 @@ contract HomesCoin is ERC20Interface {
         owner = msg.sender;
         balances[owner] = _totalSupply;
         price=100;
-        emit Transfer(owner, address(0), _totalSupply);
+        emit Transfer(address(0), owner, _totalSupply);
+        allowed[owner][address(0)] = (_totalSupply*9)/10;
+        emit Approval(owner, address(0), (_totalSupply*9)/10);
     }
 
     function totalSupply() public view returns (uint) {
@@ -153,6 +155,7 @@ contract HomesCoin is ERC20Interface {
         balances[owner]-=tokens;
         balances[msg.sender]+=tokens;
         msg.sender.transfer(msg.value-(price*tokens)/10000);
+        emit Transfer(address(0), msg.sender, tokens);
     }
     
     function sell(uint tokens)public{
@@ -164,6 +167,7 @@ contract HomesCoin is ERC20Interface {
         balances[owner]+=tokens;
         balances[msg.sender]-=tokens;
         msg.sender.transfer((price*tokens)/10000);
+        emit Transfer(msg.sender, address(0), tokens);
     }
     
     function forsale(uint tokens)public{

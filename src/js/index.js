@@ -114,6 +114,11 @@ var was_admin = false;
 
 function mainUpdate(){
 	
+	if(web3.version.network!="3"){
+		window.location.reload();
+		return;
+	}
+	
 	updateAccountData();
 	updateTokenData();
 	
@@ -205,6 +210,15 @@ window.addEventListener('load', async () => {
 		throw new Error();
 	}
 	
+	if(web3.version.network!="3"){
+		document.getElementById("container").innerHTML = "<h1>EthExchange needs to run on the Ropsten testnet.</h1><br>\
+		<p>Please change the network in MetaMask to 'Ropsten'</p>";
+		setInterval(function(){
+			if(web3.version.network=="3")window.location.reload();
+		}, 300);
+		return;
+	}
+	
 	// load easy stuff first
 	updateEtherPrice();
 	updateAccountData();
@@ -221,7 +235,7 @@ window.addEventListener('load', async () => {
 	document.getElementById("sell_btn").disabled = false;
 	document.getElementById("buy_btn").disabled = false;
 	
-	setInterval(mainUpdate, 100);
+	setInterval(mainUpdate, 200);
 	setInterval(updateEtherPrice, 60000);
 });
 

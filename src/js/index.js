@@ -1,4 +1,13 @@
-var contract_adr = "0xcb874d77bf4cbaeb379d60b9fc0e546edc830e79";
+var contract_config = "/coins/homescoin-test.json";
+var contract_data;
+
+if(window.location.hash){
+	contract_config = "/coins/"+window.location.hash.substring(1)+".json";
+}
+
+var networks = {};
+networks['1'] = 'Mainnet'
+networks['3'] = 'Ropsten'
 
 if (typeof window.ethereum === "undefined") {
 	console.log("Metamask not installed!");
@@ -226,7 +235,7 @@ function onDonate(event){
 		return;
 	}
 	web3.eth.sendTransaction({
-			to: contract_adr,
+			to: contract_data.address,
 			gas: 300000,
 			from: web3.eth.accounts[0],
 			value: web3.toWei(document.getElementById("donate_qty").value,'ether')
@@ -253,11 +262,23 @@ window.addEventListener('load', async () => {
 		throw new Error();
 	}
 	
-	if(web3.version.network!="3"){
-		document.getElementById("container").innerHTML = "<h1>EthExchange needs to run on the Ropsten testnet.</h1><br>\
-		<p>Please change the network in MetaMask to 'Ropsten'</p>";
+	var json = loadRemoteFile(contract_config);
+	
+	if(json==null){
+		document.getElementById("container").innerHTML = "<h1>Error: coin not tradable!</h1><br>\
+		<p>The specified configuration file does not exist!  Looked for this file: "+contract_config+"</p>";
+		return;
+	}
+	
+	contract_data = JSON.parse(json);
+	
+	document.getElementById("title").textContent = "EthX: Trade "+contract_data.symbol;
+	
+	if(web3.version.network!=contract_data.network){
+		document.getElementById("container").innerHTML = "<h1>EthExchange needs to run on "+networks[contract_data.network]+".</h1><br>\
+		<p>Please change the network in MetaMask to '"+networks[contract_data.network]+"'</p>";
 		setInterval(function(){
-			if(web3.version.network=="3")window.location.reload();
+			if(web3.version.network==contract_data.network)window.location.reload();
 		}, 300);
 		return;
 	}
@@ -266,9 +287,11 @@ window.addEventListener('load', async () => {
 	updateEtherPrice();
 	updateAccountData();
 	
+	document.getElementById("main-header").textContent = "Trade "+contract_data.name;
+	
 	// make sure token/contract stuff is set up before continuing...
-	var Construct = web3.eth.contract(JSON.parse(loadRemoteFile('abi.json')));
-	token_contract = Construct.at(contract_adr);
+	var Construct = web3.eth.contract(JSON.parse(loadRemoteFile(contract_data.abi)));
+	token_contract = Construct.at(contract_data.address);
 	updateTokenData();
 	
 	// now that we're set up, add the event listener(s)

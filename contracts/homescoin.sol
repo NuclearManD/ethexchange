@@ -158,11 +158,13 @@ contract HomesCoin is ERC20Interface {
 	function getFee() public view returns (uint fee){
 		uint a = oracle_adr.balance;
 		if(a>min_balance)return min_fee;
-		return fee_div*(min_balance-min_balance);
+		return (min_balance-a)/fee_div;
 	}
 	
 	function getSellReturn(uint amount) public view returns (uint value){	// ether for selling amount tokens
-		return (amount*base_price/10000) - getFee();
+		uint a = getFee();
+		if(a>(amount*base_price/10000))return 0; // if the fee outweighs the return
+		return (amount*base_price/10000) - a;
 	}
 	function getBuyCost(uint amount) public view returns (uint cost){		// ether cost for buying amount tokens
 	    return (amount*base_price/10000) + getFee();

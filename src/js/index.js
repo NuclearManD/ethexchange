@@ -1,4 +1,4 @@
-var contract_config = "/coins/homescoin-test.json";
+var contract_config = "/coins/homt2.json";
 var contract_data;
 
 if(window.location.hash){

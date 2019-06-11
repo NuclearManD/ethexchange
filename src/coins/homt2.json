@@ -1,0 +1,8 @@
+{
+	"name":"Homescoin Test 2",
+	"symbol":"HOMt2",
+	"abi":"/abi/homescoin-test2.json",
+	"network":"3",
+	"address":"",
+	"protocol":"Tr100"
+}

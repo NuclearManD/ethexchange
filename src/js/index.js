@@ -61,8 +61,13 @@ function updateTokenData(){
 	token_contract.totalSupply.call((error, result) => {
 		tokens_circulating = result.toNumber()/1e+18;
 		document.getElementById("tokentotal").textContent = "Tokens in circulation: "+tokens_circulating;
-		if(token_price>0)
-			document.getElementById("tokenmtcap").textContent = "Token market cap: "+tokens_circulating*token_price*ether_price+" USD";
+		getBuyCost(token_contract,tokens_circulating,(error, result2) => {
+			token_price = result2/tokens_circulating;
+			document.getElementById("tokenprice").textContent = "Token buy price: "+token_price+" ETH";
+			updateButtonStates();
+			if(tokens_circulating>0)
+				document.getElementById("tokenmtcap").textContent = "Token market cap: "+result2*ether_price+" USD";
+		});
 	});
 	token_contract.balances.call(web3.eth.accounts[0],(error, result) => {
 		token_balance = result.toNumber()/1e+18;
@@ -74,19 +79,6 @@ function updateTokenData(){
 		document.getElementById("tokenavail").textContent = "Tokens for sale: "+token_avail;
 		updateButtonStates();
 	});
-	if(typeof token_contract.price === "undefined"){
-		console.log("This contract is outdated and does not expose the 'price' variable.  Token price and market cap will be unavailable.");
-		document.getElementById("tokenprice").textContent = "Token price is unknown.";
-		document.getElementById("tokenmtcap").textContent = "Token market cap is unknown.";
-	}else{
-		token_contract.price.call((error, result) => {
-			token_price = result.toNumber()/10000.0;
-			document.getElementById("tokenprice").textContent = "Token price: "+token_price+" ETH";
-			updateButtonStates();
-			if(tokens_circulating>0)
-				document.getElementById("tokenmtcap").textContent = "Token market cap: "+tokens_circulating*token_price*ether_price+" USD";
-		});
-	}
 }
 
 function updateAll(){
@@ -125,7 +117,7 @@ var was_admin = false;
 
 function mainUpdate(){
 	
-	if(web3.version.network!="3"){
+	if(web3.version.network!=contract_data.network){
 		window.location.reload();
 		return;
 	}
@@ -133,21 +125,23 @@ function mainUpdate(){
 	updateAccountData();
 	updateTokenData();
 	
-	token_contract.owner.call((error, result) => {
-		var is_admin = result==web3.eth.accounts[0];
-		if(is_admin!=was_admin){
-			if(is_admin){
-				document.getElementById("admin-box").style.display = '';
-				document.getElementById("setprice_btn").onclick=onSetPrice;
-				document.getElementById("setavail_btn").onclick=onSetAvail;
-				document.getElementById("collect_btn").onclick=onCollect;
-				document.getElementById("donate_btn").onclick=onDonate;
-			}else{
-				document.getElementById("admin-box").style.display = 'none';
+	if(contract_data.protocol=="legacy"){
+		token_contract.owner.call((error, result) => {
+			var is_admin = result==web3.eth.accounts[0];
+			if(is_admin!=was_admin){
+				if(is_admin){
+					document.getElementById("admin-box").style.display = '';
+					document.getElementById("setprice_btn").onclick=onSetPrice;
+					document.getElementById("setavail_btn").onclick=onSetAvail;
+					document.getElementById("collect_btn").onclick=onCollect;
+					document.getElementById("donate_btn").onclick=onDonate;
+				}else{
+					document.getElementById("admin-box").style.display = 'none';
+				}
+				was_admin = is_admin;
 			}
-			was_admin = is_admin;
-		}
-	});
+		});
+	}
 }
 
 function onModify(event){
@@ -158,19 +152,25 @@ function onModify(event){
 	// now do all the other calculations
 	token_qty = document.getElementById("tokens").value;
 	//console.log(token_qty);
-	document.getElementById("value_ether").textContent = "Value in Ethereum: " + token_price*token_qty + " ETH";
-	document.getElementById("value_usd").textContent = "Value in USD: $" + token_price*token_qty*ether_price;
+	getBuyCost(token_contract,token_qty,(error,result)=>{
+		document.getElementById("buy_val").textContent = "Buy cost: " + result + " ETH ("+result*ether_price+" USD)";
+	});
+	getSellReturn(token_contract,token_qty,(error,result)=>{
+		document.getElementById("sell_val").textContent = "Sell value: " + result + " ETH ("+result*ether_price+" USD)";
+	});
 }
 
 function onBuy(event){
+	getBuyCost(token_contract,token_qty,(error,result)=>{
 	token_contract.buy(web3.toWei(token_qty, 'ether'), {
 			gas: 300000,
 			from: web3.eth.accounts[0],
-			value: web3.toWei(token_price*token_qty, 'ether')
+			value: web3.toWei(result+0.005, 'ether')
 		}, (err, result) => {
 			// Result is the transaction address of that function
 			console.log("buy: "+result);
 		});
+	});
 }
 
 function onSell(event){
@@ -271,6 +271,7 @@ window.addEventListener('load', async () => {
 	}
 	
 	contract_data = JSON.parse(json);
+	protocol = contract_data.protocol;
 	
 	document.getElementById("title").textContent = "EthX: Trade "+contract_data.symbol;
 	

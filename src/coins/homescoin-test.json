@@ -1,7 +1,8 @@
 {
-	"name":"Homescoin Test",
-	"symbol":"HOMt",
+	"name":"Homescoin Test 1",
+	"symbol":"HOMt1",
 	"abi":"/abi/homescoin-test.json",
 	"network":"3",
-	"address":"0xcb874d77bf4cbaeb379d60b9fc0e546edc830e79"
+	"address":"0xcb874d77bf4cbaeb379d60b9fc0e546edc830e79",
+	"protocol":"legacy"
 }

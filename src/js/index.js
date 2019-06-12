@@ -79,6 +79,10 @@ function updateTokenData(){
 		document.getElementById("tokenavail").textContent = "Tokens for sale: "+token_avail;
 		updateButtonStates();
 	});
+	getFee(token_contract,(error, result) => {
+		document.getElementById("tokenfee").textContent = "Trading fee: "+result+" ETH";
+		updateButtonStates();
+	});
 }
 
 function updateAll(){

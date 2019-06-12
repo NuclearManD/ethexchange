@@ -11,11 +11,23 @@
 
 /* "Tr100"
  * 
- * buy(amount)			: buy tokens
- * sell(amount)			: sell tokens
+ * buy(amount)				: buy tokens
+ * sell(amount)				: sell tokens
  * getSellReturn(amount)	: ether for selling amount tokens
  * getBuyCost(amount)		: ether cost for buying amount tokens
- * get_tradable()	: returns tokens that are for sale
+ * get_tradable()			: returns tokens that are for sale
+ * 
+ * This protocol does not specify specific setPrice or other control functions.
+ */
+
+/* "Tr100b"
+ * 
+ * buy(amount)				: buy tokens
+ * sell(amount)				: sell tokens
+ * getSellReturn(amount)	: ether for selling amount tokens
+ * getBuyCost(amount)		: ether cost for buying amount tokens
+ * get_tradable()			: returns tokens that are for sale
+ * getFee()					: returns current fee for any transaction - may change
  * 
  * This protocol does not specify specific setPrice or other control functions.
  */
@@ -29,7 +41,7 @@ function getSellReturn(token_contract, amount, callback){
 		token_contract.price.call((error, result) => {
 			callback(error, result.toNumber()/10000*amount);
 		});
-	}else if(protocol=="Tr100"){
+	}else if(protocol.substring(0,3)=="Tr1"){
 		token_contract.getSellReturn(web3.toBigNumber(Math.pow(10, decimals)*amount), (error, result) => {
 			callback(error, result.toNumber()/Math.pow(10, decimals));
 		});
@@ -42,7 +54,7 @@ function getBuyCost(token_contract, amount, callback){
 			//console.log(amount, result.toNumber());
 			callback(error, (result.toNumber()/10000)*amount);
 		});
-	}else if(protocol=="Tr100"){
+	}else if(protocol.substring(0,3)=="Tr1"){
 		token_contract.getBuyCost(web3.toBigNumber(Math.pow(10, decimals)*amount), (error, result) => {
 			callback(error, result.toNumber()/Math.pow(10, decimals));
 		});
@@ -54,9 +66,17 @@ function getTokensAvailable(token_contract, callback){
 		token_contract.get_tradable.call((error, result) => {
 			callback(error, result.toNumber()/Math.pow(10, decimals));
 		});
-	}else if(protocol=="Tr100"){
+	}else if(protocol.substring(0,3)=="Tr1"){
 		token_contract.get_tradable.call((error, result) => {
 			callback(error, result.toNumber()/Math.pow(10, decimals));
 		});
 	}
+}
+
+function getFee(token_contract, callback){
+	if(protocol=="Tr100b"){
+		token_contract.getFee.call((error, result) => {
+			callback(error, web3.fromWei(result, "ether").toNumber());
+		});
+	}else callback(null,0);
 }

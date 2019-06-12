@@ -4,5 +4,5 @@
 	"abi":"/abi/homescoin-test2.json",
 	"network":"3",
 	"address":"0x9E405115F9992BE0D0bFF2cCc81Eb647dABB74E4",
-	"protocol":"Tr100"
+	"protocol":"Tr100b"
 }

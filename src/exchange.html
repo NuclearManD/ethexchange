@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title id="title">EthX: Trade HOM</title>
+		<link href="css/index.css" rel="stylesheet">
+		
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+	</head>
+	<body>
+		<div class="container" id="container">
+			<div class="row">
+				<h1 class="text-center" id="main-header">Trade HomesCoin</h1>
+				<a href="/index.html">[Trade another token]</a>
+				<hr/>
+			</div>
+
+			<div id="accountstats" class="row" style="float: right">
+				<p><a id="etheradr" href="" target="_blank">Loading Ether address...</a></p>
+				<p id="ethbalance">Loading Ether balance...</p>
+				<p id="tokbalance">Loading token balance...</p>
+				<p id="tokenavail">Loading token availability...</p>
+			</div>
+
+			<div id="tokenstats" class="row">
+				<p id="etherprice">Loading Ethereum price...</p>
+				<p id="tokenprice">Loading token price...</p>
+				<p id="tokentotal">Loading total tokens...</p>
+				<p id="tokenmtcap">Loading market cap...</p>
+				<p id="tokenfee">Loading trading fee...</p>
+			</div>
+			
+			<div>
+				<p>Token amount to trade: <input class="num" type="number" id="tokens" min="0" max="0"></p>
+				<p id="buy_val">Buy cost: ?</p>
+				<p id="sell_val">Sell value: ?</p>
+				<button class="btn btn-default" type="button" data-id="0" disabled id="buy_btn">Buy</button>
+				<button class="btn btn-default" type="button" data-id="0" disabled id="sell_btn">Sell</button>
+			</div>
+		</div>
+		<div class="admin-box" id="admin-box" style="display:none">
+			<div class="row">
+				<h2>Admin Utilities (You are the contract owner)</h2>
+				<p>Set Token Price: <input class="num" type="number" id="admin_price" min="0" max="0"><button class="btn btn-default" type="button" data-id="0" id="setprice_btn">Set Price</button></p>
+				<p>Set Tokens for sale: <input class="num" type="number" id="admin_forsale" min="0" max="0"><button class="btn btn-default" type="button" data-id="0" id="setavail_btn">Set Availabilty</button></p>
+				<p>Collect funds from contract: <input class="num" type="number" id="collect_qty" min="0" max="0"><button class="btn btn-default" type="button" data-id="0" id="collect_btn">Collect</button></p>
+				<p>Donate to contract: <input class="num" type="number" id="donate_qty" min="0" max="0"><button class="btn btn-default" type="button" data-id="0" id="donate_btn">Donate</button></p>
+			</div>
+		</div>
+		<script src="js/index.js"></script>
+		<script src="js/protocol.js"></script>
+	</body>
+</html>

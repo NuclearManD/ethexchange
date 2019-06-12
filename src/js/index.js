@@ -58,17 +58,17 @@ function updateAccountData(){
 }
 
 function updateTokenData(){
-	token_contract.totalSupply.call((error, result) => {
-		tokens_circulating = result.toNumber()/1e+18;
-		document.getElementById("tokentotal").textContent = "Tokens in circulation: "+tokens_circulating;
-		getBuyCost(token_contract,tokens_circulating,(error, result2) => {
-			token_price = result2/tokens_circulating;
-			document.getElementById("tokenprice").textContent = "Token buy price: "+token_price+" ETH";
-			updateButtonStates();
-			if(tokens_circulating>0)
-				document.getElementById("tokenmtcap").textContent = "Token market cap: "+result2*ether_price+" USD";
+	getTotalSupply(token_contract, (error, result) => {
+			tokens_circulating = result;
+			document.getElementById("tokentotal").textContent = "Tokens in circulation: "+tokens_circulating;
+			getBuyCost(token_contract,tokens_circulating,(error, result2) => {
+				token_price = result2/tokens_circulating;
+				document.getElementById("tokenprice").textContent = "Token buy price: "+token_price+" ETH";
+				updateButtonStates();
+				if(tokens_circulating>0)
+					document.getElementById("tokenmtcap").textContent = "Token market cap: "+result2*ether_price+" USD";
+			});
 		});
-	});
 	token_contract.balances.call(web3.eth.accounts[0],(error, result) => {
 		token_balance = result.toNumber()/1e+18;
 		document.getElementById("tokbalance").textContent = "Token balance: "+token_balance;

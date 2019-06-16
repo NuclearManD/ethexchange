@@ -26,6 +26,10 @@ var ether_price_url = 'https://api.coinmarketcap.com/v1/ticker/ethereum/';
 
 var ether_price, token_price=-1, tokens_circulating=-1, ether_balance=-1, token_balance=-1, token_avail=-1, token_contract, token_qty=0;
 
+function sround(num){
+	return Math.round(num*100.0)/100.0;
+}
+
 function loadRemoteFile(url){
 	var Http = new XMLHttpRequest();
 	Http.open("GET", url, false);
@@ -41,8 +45,8 @@ function updateEtherPrice(){
 	Http.open("GET", ether_price_url, true);
 	Http.send();
 	Http.onreadystatechange = (e) => {
-		ether_price = JSON.parse(Http.response)[0].price_usd;
-		document.getElementById("etherprice").textContent = "Ethereum Price: $" +  Math.round(ether_price*100)/100.0 + " USD";
+		ether_price = parseInt(JSON.parse(Http.response)[0].price_usd);
+		document.getElementById("etherprice").textContent = "Ethereum Price: $" +  sround(ether_price) + " USD";
 	}
 }
 
@@ -52,7 +56,7 @@ function updateAccountData(){
 	document.getElementById("etheradr").href = "https://etherscan.io/address/"+acc;
 	web3.eth.getBalance(acc,(error,result) => {
 		ether_balance = result/1e+18;
-		document.getElementById("ethbalance").textContent = "Ether Balance: " + result/1e+18 + " ETH";
+		document.getElementById("ethbalance").textContent = "Ether Balance: " + result/1e+18 + " ETH ("+sround(ether_balance*ether_price)+" USD)";
 		updateButtonStates();
 	});
 }
@@ -63,19 +67,19 @@ function updateTokenData(){
 			document.getElementById("tokentotal").textContent = "Tokens in circulation: "+tokens_circulating;
 			getBuyCost(token_contract,tokens_circulating,(error, result2) => {
 				token_price = result2/tokens_circulating;
-				document.getElementById("tokenprice").textContent = "Token buy price: "+token_price+" ETH";
+				document.getElementById("tokenprice").textContent = "Token buy price: "+token_price+" ETH ("+(token_price*ether_price)+" USD)";
 				updateButtonStates();
 				if(tokens_circulating>0)
 					document.getElementById("tokenmtcap").textContent = "Token market cap: "+result2*ether_price+" USD";
 			});
 		});
-	token_contract.balances.call(web3.eth.accounts[0],(error, result) => {
-		token_balance = result.toNumber()/1e+18;
-		document.getElementById("tokbalance").textContent = "Token balance: "+token_balance;
+	getBalance(token_contract,web3.eth.accounts[0],(error, result) => {
+		token_balance = result;
+		document.getElementById("tokbalance").textContent = "Token balance: "+token_balance+" ("+sround(token_balance*token_price)+" ETH | "+sround(token_balance*token_price*ether_price)+" USD)";
 		updateButtonStates();
 	});
-	token_contract.get_tradable.call((error, result) => {
-		token_avail = result.toNumber()/1e+18;
+	getForSale(token_contract,(error, result) => {
+		token_avail = result;
 		document.getElementById("tokenavail").textContent = "Tokens for sale: "+token_avail;
 		updateButtonStates();
 	});
@@ -100,21 +104,20 @@ function updateButtonStates(){
 			if(tokens_circulating>0)
 				document.getElementById("tokenmtcap").textContent = "Token market cap: "+tokens_circulating*token_price*ether_price+" USD";
 		});*/
-	var disable = false;
-	token_qty = document.getElementById("tokens").value;
+	token_qty = parseInt(document.getElementById("tokens").value);
 	if(token_qty==0||ether_balance<0.01){
 		document.getElementById("sell_btn").disabled = true;
 		document.getElementById("buy_btn").disabled = true;
 		return;
 	}
-	document.getElementById("sell_btn").disabled = false;
-	document.getElementById("buy_btn").disabled = false;
-	if(token_price*token_qty>ether_balance || token_avail<token_qty){
-		document.getElementById("buy_btn").disabled = true;
-	}
-	if(token_qty>token_balance){
-		document.getElementById("sell_btn").disabled = true;
-	}
+	canBuy(token_contract, token_qty, ether_balance, (error, result) => {
+		if(error!=null)console.log(error);
+		document.getElementById("buy_btn").disabled = !result;
+	});
+	canSell(token_contract, token_qty, token_balance, (error, result) => {
+		if(error!=null)console.log(error);
+		document.getElementById("sell_btn").disabled = !result;
+	});
 }
 
 var was_admin = false;

@@ -168,27 +168,11 @@ function onModify(event){
 }
 
 function onBuy(event){
-	getBuyCost(token_contract,token_qty,(error,result)=>{
-	token_contract.buy(web3.toWei(token_qty, 'ether'), {
-			gas: 300000,
-			from: web3.eth.accounts[0],
-			value: web3.toWei(result+0.005, 'ether')
-		}, (err, result) => {
-			// Result is the transaction address of that function
-			console.log("buy: "+result);
-		});
-	});
+	buy(token_contract, contract_data, token_qty);
 }
 
 function onSell(event){
-	token_contract.sell(web3.toWei(token_qty,'ether'), {
-			gas: 300000,
-			from: web3.eth.accounts[0],
-			value: 0
-		}, (err, result) => {
-			// Result is the transaction address of that function
-			console.log("sell: "+result);
-		});
+	sell(token_contract, contract_data, token_qty);
 }
 
 function onSetPrice(event){

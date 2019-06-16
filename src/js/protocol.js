@@ -58,8 +58,50 @@
  */
 
 var protocol = "Tr100";
+var erc20_abi = null;
 
+var Http = new XMLHttpRequest();
+Http.open("GET", "/abi/erc20.json");
+Http.send();
+Http.onreadystatechange = (e) => {
+	if(Http.status==200){
+		//console.log(Http.responseText);
+		erc20_abi = JSON.parse(Http.responseText);
+	}else
+		null;
+};
 var decimals = 18;
+
+/*
+ * Following code from https://ethereum.stackexchange.com/questions/9636/whats-the-proper-way-to-wait-for-a-transaction-to-be-mined-and-get-the-results
+ */
+function getTransactionReceiptMined(txnHash, interval) {
+    var transactionReceiptAsync;
+    interval = interval ? interval : 500;
+    transactionReceiptAsync = function(txnHash, resolve, reject) {
+		web3.eth.getTransactionReceipt(txnHash, (err,receipt)=>{
+			if (receipt == null) {
+				setTimeout(function () {
+					transactionReceiptAsync(txnHash, resolve, reject);
+				}, interval);
+			} else {
+				resolve(receipt);
+			}
+		});
+    };
+
+    if (Array.isArray(txnHash)) {
+        var promises = [];
+        txnHash.forEach(function (oneTxHash) {
+            promises.push(web3.eth.getTransactionReceiptMined(oneTxHash, interval));
+        });
+        return Promise.all(promises);
+    } else {
+        return new Promise(function (resolve, reject) {
+                transactionReceiptAsync(txnHash, resolve, reject);
+            });
+    }
+};
 
 function getSellReturn(token_contract, amount, callback){
 	if(protocol=="legacy"){
@@ -179,4 +221,53 @@ function getForSale(token_contract, callback){
 	}
 }
 
+function buy(token_contract, token_cfg, tokens){
+	getBuyCost(token_contract,tokens,(error,result)=>{
+		token_contract.buy(web3.toBigNumber(Math.pow(10, decimals)*tokens), {
+			gas: 1000000,
+			from: web3.eth.accounts[0],
+			value: web3.toWei(result+0.01, 'ether')
+		}, (err, result) => {
+			// Result is the transaction address of that function
+			console.log("buy: "+result);
+		});
+	});
+}
 
+function sell(token_contract, token_cfg, tokens){
+	if(protocol.endsWith("compat")){
+		token_contract.latched_contract((error, result) => {
+			
+			erc20_contract = web3.eth.contract(erc20_abi).at(result);
+			erc20_contract.approve(token_cfg.address, web3.toBigNumber(Math.pow(10, decimals)*tokens), {
+				gas: 150000,
+				from: web3.eth.accounts[0],
+				value: 0
+			}, (error, result) => {
+				console.log("approve: "+result);
+				// now wait for the transaction to be mined
+				getTransactionReceiptMined(result).then(function (receipt) {
+					// mined!  Now send the sell signal
+					token_contract.sell(web3.toBigNumber(Math.pow(10, decimals)*tokens), {
+						gas: 1000000,
+						from: web3.eth.accounts[0],
+						value: 0
+					}, (err, result) => {
+						// Result is the transaction address of that function
+						console.log("sell: "+result);
+					});
+				});
+				alert("There will be one more transaction to send, please wait at least a minute.");
+			});
+		});
+	}else{
+		token_contract.sell(web3.toBigNumber(Math.pow(10, decimals)*tokens), {
+			gas: 1000000,
+			from: web3.eth.accounts[0],
+			value: 0
+		}, (err, result) => {
+				// Result is the transaction address of that function
+				console.log("sell: "+result);
+		});
+	}
+}

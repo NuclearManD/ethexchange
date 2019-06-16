@@ -154,8 +154,8 @@ contract ERC20TokenLatch {
 	    
 		// now try to fulfill the order
 		for(uint32 i=0;i<num_sell_orders;i++){
-		    if(buy_price<=minSellPrice())
-		        return; // cannot fulfill order because there is not a sell order that would satisfy
+		    if(buy_price<minSellPrice())
+		        break; // cannot fulfill order because there is not a sell order that would satisfy
 		    
 		    if(sell_order_price[i]<=buy_price){
 		        // we can trade some!
@@ -203,8 +203,8 @@ contract ERC20TokenLatch {
 	    
 		// now try to fulfill the order
 		for(uint32 i=0;i<num_buy_orders;i++){
-		    if(sell_price>=maxBuyPrice())
-		        return; // cannot fulfill order because there is not a sell order that would satisfy
+		    if(sell_price>maxBuyPrice())
+		        break; // cannot fulfill order because there is not a buy order that would satisfy
 		    
 		    if(buy_order_price[i]>=sell_price){
 		        // we can trade some!
@@ -224,7 +224,7 @@ contract ERC20TokenLatch {
     		        uint qty = buy_order_qty[i];
     		        left-=qty;
     	            
-		            transfer(buy_order_owners[i],left);
+		            transfer(buy_order_owners[i],qty);
     	            msg.sender.transfer((sell_price*qty)/10000);
     	            
     	            // send the owner any extra funds
@@ -240,15 +240,13 @@ contract ERC20TokenLatch {
 		addSellOrder(msg.sender, left, sell_price);
 	}
     
-    /*function canBuy(uint amount) public pure returns (bool possible){			// returns true if this amount of token can be bought - does not account for Ethereum account balance
+    function canBuy(uint amount) public pure returns (bool possible){			// returns true if this amount of token can be bought - does not account for Ethereum account balance
         return true;
     }
     
     function canSell(uint amount) public pure returns (bool possible){			// returns true if this amount of token can be sold - does not account for token account balance
 	    return true;
-    }*/
-    bool public canSell = true;
-    bool public canBuy = true;
+    }
 	
 	function get_tradable() public view returns (uint){
         return ERC20(latched_contract).totalSupply();

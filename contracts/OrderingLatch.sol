@@ -141,23 +141,25 @@ contract ERC20TokenLatch {
 	}
 	
 	function buy(uint tokens)public payable{
-	    uint cost = getBuyCost(tokens);
-		require(msg.value>=cost);
+		placeBuyOrder(tokens, getBuyPrice());
+	}
+	
+	function placeBuyOrder(uint tokens, uint64 price10000) public payable{
+	    uint cost = fee + ((tokens*price10000)/10000);
+	    require(msg.value>=cost);
 		
 		// handle fee and any extra funds
 		msg.sender.transfer(msg.value-cost);
 		owner.transfer(fee);
 		
-		// get info needed for trading
-	    uint64 buy_price = getBuyPrice();
 	    uint left = tokens;
 	    
 		// now try to fulfill the order
 		for(uint32 i=0;i<num_sell_orders;i++){
-		    if(buy_price<minSellPrice())
+		    if(price10000<minSellPrice())
 		        break; // cannot fulfill order because there is not a sell order that would satisfy
 		    
-		    if(sell_order_price[i]<=buy_price){
+		    if(sell_order_price[i]<=price10000){
 		        // we can trade some!
 		        if(sell_order_qty[i]>left){
 		            // we can trade all!
@@ -166,7 +168,7 @@ contract ERC20TokenLatch {
 		            transfer(msg.sender, left);
 		            
 		            // send the owner any extra funds
-		            owner.transfer(((buy_price-sell_order_price[i])*left)/10000);
+		            owner.transfer(((price10000-sell_order_price[i])*left)/10000);
 		            
 		            // order fully fulfilled
 		            return;
@@ -178,7 +180,7 @@ contract ERC20TokenLatch {
     	            transfer(msg.sender, qty);
     	            
     	            // send the owner any extra funds
-    	            owner.transfer(((buy_price-sell_order_price[i])*qty)/10000);
+    	            owner.transfer(((price10000-sell_order_price[i])*qty)/10000);
     	            
     	            // delete the order that was completed
     	            rmSellOrder(i);
@@ -187,18 +189,22 @@ contract ERC20TokenLatch {
 		}
 		
 		// if we are here then some of the order is left.  Place the order in the queue.
-		addBuyOrder(msg.sender, left, buy_price);
+		addBuyOrder(msg.sender, left, price10000);
 		
 	}
 	
 	function sell(uint tokens)public{
+	    placeSellOrder(tokens, getSellPrice());
+	}
+	    
+	function placeSellOrder(uint tokens, uint64 price10000) public payable{
 	    require(ERC20(latched_contract).allowance(msg.sender, address(this))>=tokens);
 		
 		// handle fee and any extra funds
 		ERC20(latched_contract).transferFrom(msg.sender,address(this),tokens);
 		
 		// get info needed for trading
-	    uint64 sell_price = getSellPrice();
+	    uint64 sell_price = price10000;
 	    uint left = tokens;
 	    
 		// now try to fulfill the order

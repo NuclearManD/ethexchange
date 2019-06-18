@@ -36,7 +36,7 @@ contract HomesCoin is ERC20Interface {
 	// ------------------------------------------------------------------------
 	constructor() public {
 		symbol = "HOM";
-		name = "HomesCoin";
+		name = "HOM Coin";
 		decimals = 18;
 		_totalSupply = 1000000 * 10**uint(decimals);
 		owner = msg.sender;
@@ -53,6 +53,10 @@ contract HomesCoin is ERC20Interface {
 
 	function totalSupply() public view returns (uint) {
 		return _totalSupply;
+	}
+	
+	function getCirculatingSupply() public view returns (uint) {
+	    return _totalSupply - balances[address(this)];
 	}
 
 	function balanceOf(address tokenOwner) public view returns (uint balance) {
@@ -89,20 +93,21 @@ contract HomesCoin is ERC20Interface {
 		return allowed[tokenOwner][spender];
 	}
 	
-	function mint(address target, uint amt) public{
+	function mint(uint amt) public{
 		require(msg.sender==owner);
-		balances[target] += amt;
-		emit Transfer(target, address(0), amt);
+		balances[address(this)] += amt;
+		emit Transfer(address(0), address(this), amt);
 	}
 	function burn(uint amt) public{
 		require(msg.sender==owner);
 		require(balances[owner]>=amt);
 		balances[owner]-=amt;
+		emit Transfer(owner, address(0), amt);
 	}
 	
-	function destroy() public {
+	function destroy(address payable receiver) public {
 		require(msg.sender==owner);
-		selfdestruct(msg.sender);
+		selfdestruct(receiver);
 	}
 	
 	event HomeSaleEvent(uint64 houseid, uint8 day, uint8 month, uint16 year, uint64 price100, string source);
@@ -173,30 +178,33 @@ contract HomesCoin is ERC20Interface {
 	function buy(uint tokens)public payable{
 	    uint cost = getBuyCost(tokens);
 		require(msg.value>=cost);
-		require(allowed[owner][address(0)]>=tokens);
-		require(balances[owner]>=tokens);
-		require(msg.sender!=owner);
-		allowed[owner][address(0)]-=tokens;
-		balances[owner]-=tokens;
+		require(balances[address(this)]>=tokens);
+		
+		balances[address(this)]-=tokens;
 		balances[msg.sender]+=tokens;
 		msg.sender.transfer(msg.value-cost);
+		
 		if(oracle_adr.balance<min_balance)
 		    oracle_adr.transfer(getFee());
-		emit Transfer(address(0), msg.sender, tokens);
+		else
+		    owner.transfer(getFee()/2);
+		    
+		emit Transfer(address(this), msg.sender, tokens);
 	}
 	
 	function sell(uint tokens)public{
 	    uint result = getSellReturn(tokens);
 	    require(balances[msg.sender]>=tokens);
 		require(address(this).balance>result);
-		require(msg.sender!=owner);
-		allowed[owner][address(0)]+=tokens;
-		balances[owner]+=tokens;
+		
+		balances[address(this)]+=tokens;
 		balances[msg.sender]-=tokens;
 		msg.sender.transfer(result);
 		if(oracle_adr.balance<min_balance)
 		    oracle_adr.transfer(getFee());
-		emit Transfer(msg.sender, address(0), tokens);
+		else
+		    owner.transfer(getFee()/2);
+		emit Transfer(msg.sender, address(this), tokens);
 	}
 	
 	function forsale(uint tokens)public{
@@ -206,7 +214,7 @@ contract HomesCoin is ERC20Interface {
 	}
 	
 	function get_tradable() public view returns (uint tradable){
-		return allowed[owner][address(0)];
+		return balances[address(this)];
 	}
 	
 	function setPrice(uint newPrice) public{
@@ -223,11 +231,5 @@ contract HomesCoin is ERC20Interface {
 	
 	function setOracleAddress(address payable adr) public {
 	    oracle_adr = adr;
-	}
-	
-	function collect(uint amount) public{
-		require(msg.sender==owner);
-		require(address(this).balance>=amount+1 ether);
-		msg.sender.transfer(amount);
 	}
 }

@@ -168,11 +168,11 @@ function onModify(event){
 }
 
 function onBuy(event){
-	buy(token_contract, contract_data, token_qty);
+	buy(token_contract, contract_data, document.getElementById("tokens").value);
 }
 
 function onSell(event){
-	sell(token_contract, contract_data, token_qty);
+	sell(token_contract, contract_data, document.getElementById("tokens").value);
 }
 
 function onSetPrice(event){

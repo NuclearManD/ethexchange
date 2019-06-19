@@ -61,7 +61,7 @@ var protocol = "Tr100";
 var erc20_abi = null;
 
 var Http = new XMLHttpRequest();
-Http.open("GET", "/abi/erc20.json");
+Http.open("GET", "abi/erc20.json");
 Http.send();
 Http.onreadystatechange = (e) => {
 	if(Http.status==200){

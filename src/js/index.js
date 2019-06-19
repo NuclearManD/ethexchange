@@ -24,7 +24,7 @@ if (typeof window.ethereum === "undefined") {
 
 var ether_price_url = 'https://api.coinmarketcap.com/v1/ticker/ethereum/';
 
-var ether_price, token_price=-1, tokens_circulating=-1, ether_balance=-1, token_balance=-1, token_avail=-1, token_contract, token_qty=0;
+var ether_price, token_price=-1, tokens_circulating=-1, ether_balance=-1, token_balance=-1, token_avail=-1, token_contract, token_qty=0.0;
 
 function sround(num){
 	return Math.round(num*100.0)/100.0;
@@ -104,7 +104,7 @@ function updateButtonStates(){
 			if(tokens_circulating>0)
 				document.getElementById("tokenmtcap").textContent = "Token market cap: "+tokens_circulating*token_price*ether_price+" USD";
 		});*/
-	token_qty = parseInt(document.getElementById("tokens").value);
+	token_qty = parseFloat(document.getElementById("tokens").value);
 	if(token_qty==0||ether_balance<0.01){
 		document.getElementById("sell_btn").disabled = true;
 		document.getElementById("buy_btn").disabled = true;
@@ -157,7 +157,7 @@ function onModify(event){
 	updateTokenData();
 	
 	// now do all the other calculations
-	token_qty = document.getElementById("tokens").value;
+	token_qty = parseFloat(document.getElementById("tokens").value);
 	//console.log(token_qty);
 	getBuyCost(token_contract,token_qty,(error,result)=>{
 		document.getElementById("buy_val").textContent = "Buy cost: " + result + " ETH ("+result*ether_price+" USD)";
@@ -168,11 +168,11 @@ function onModify(event){
 }
 
 function onBuy(event){
-	buy(token_contract, contract_data, document.getElementById("tokens").value);
+	buy(token_contract, contract_data, token_qty);
 }
 
 function onSell(event){
-	sell(token_contract, contract_data, document.getElementById("tokens").value);
+	sell(token_contract, contract_data, token_qty);
 }
 
 function onSetPrice(event){

@@ -1,7 +1,7 @@
 {
 	"name":"Lol Coin",
 	"symbol":"LEL",
-	"abi":"/abi/lelcoin.json",
+	"abi":"abi/lelcoin.json",
 	"network":"3",
 	"address":"0x1b5c8afd9739c3d2af5a4859dec0482a6df7667d",
 	"protocol":"Tr100b-compat"

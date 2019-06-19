@@ -1,0 +1,8 @@
+{
+	"name":"HOM Coin",
+	"symbol":"HOM",
+	"abi":"abi/hom.json",
+	"network":"1",
+	"address":"0xAc3a018B22677A52c4A5c5AabCA551898aBc49D1",
+	"protocol":"Tr100b"
+}

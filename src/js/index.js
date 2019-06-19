@@ -1,8 +1,8 @@
-var contract_config = "/coins/homt2.json";
+var contract_config = "coins/homt2.json";
 var contract_data;
 
 if(window.location.hash){
-	contract_config = "/coins/"+window.location.hash.substring(1)+".json";
+	contract_config = "coins/"+window.location.hash.substring(1)+".json";
 }
 
 var networks = {};

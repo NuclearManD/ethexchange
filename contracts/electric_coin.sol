@@ -1,11 +1,10 @@
+/**
+ *Submitted for verification at Etherscan.io on 2019-06-12
+*/
 
 pragma solidity ^0.5.1;
 
-// This token latch uses buy and sell orders to operate
-
-// Follows the Tr100c protocol
-
-contract ERC20 {
+contract ERC20Interface {
 	function totalSupply() public view returns (uint);
 	function balanceOf(address tokenOwner) public view returns (uint balance);
 	function allowance(address tokenOwner, address spender) public view returns (uint remaining);
@@ -17,15 +16,91 @@ contract ERC20 {
 	event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
 }
 
-contract ERC20TokenLatch {
+contract ElectricCoin is ERC20Interface {
+
+	string public symbol;
+	string public  name;
+	uint8 public decimals;
+	uint _totalSupply;
+	
+	address payable public owner;
+
+	mapping(address => uint) public balances;
+	mapping(address => mapping(address => uint)) allowed;
+
+	// ------------------------------------------------------------------------
+	// Constructor
+	// ------------------------------------------------------------------------
+	constructor() public {
+		symbol = "LLL";
+		name = "Electric Coin";
+		decimals = 18;
+		_totalSupply = 1000000000 * 10**uint(decimals);
+		owner = msg.sender;
+		balances[owner] = _totalSupply;
+		emit Transfer(address(0), owner, _totalSupply);
+		fee = .0001 ether;
+	}
+
+	function totalSupply() public view returns (uint) {
+		return _totalSupply;
+	}
+
+	function balanceOf(address tokenOwner) public view returns (uint balance) {
+		return balances[tokenOwner];
+	}
+
+	function transfer(address to, uint tokens) public returns (bool success) {
+		require(to!=address(0));
+		require(tokens<=balances[msg.sender]);
+		balances[msg.sender] = balances[msg.sender] - tokens;
+		balances[to] = balances[to] + tokens;
+		emit Transfer(msg.sender, to, tokens);
+		return true;
+	}
+
+	function approve(address spender, uint tokens) public returns (bool success) {
+		allowed[msg.sender][spender] = tokens;
+		emit Approval(msg.sender, spender, tokens);
+		return true;
+	}
+
+	function transferFrom(address from, address to, uint tokens) public returns (bool success) {
+		require(to!=address(0));
+		require(balances[from]>=tokens);
+		require(allowed[from][msg.sender]>=tokens);
+		balances[from] = balances[from] - tokens;
+		allowed[from][msg.sender] = allowed[from][msg.sender] - tokens;
+		balances[to] = balances[to] + tokens;
+		emit Transfer(from, to, tokens);
+		return true;
+	}
+
+	function allowance(address tokenOwner, address spender) public view returns (uint remaining) {
+		return allowed[tokenOwner][spender];
+	}
+	
+	function mint(address target, uint amt) public{
+		require(msg.sender==owner);
+		balances[target] += amt;
+		emit Transfer(target, address(0), amt);
+	}
+	function burn(uint amt) public{
+		require(msg.sender==owner);
+		require(balances[owner]>=amt);
+		balances[owner]-=amt;
+	}
+	
+	function destroy() public {
+		require(msg.sender==owner);
+		selfdestruct(msg.sender);
+	}
+	
+	
     
     uint64 trade_increment = 1;
 	
 	uint public fee;	    		// fee for trades
-	
-	address payable public owner;
-    
-    address payable public latched_contract;
     
     mapping(uint32 => address payable) public buy_order_owners;
     mapping(uint32 => uint256)   public  buy_order_qty;
@@ -97,24 +172,6 @@ contract ERC20TokenLatch {
             else return maxBuyPrice();
         }else if(num_buy_orders==0) return minSellPrice();
         return (minSellPrice()+maxBuyPrice())/2;
-    }
-    
-    constructor(address payable latch) public {
-        latched_contract=latch;
-        owner = msg.sender;
-		fee = .0001 ether;
-    }
-    
-    function balanceOf(address tokenOwner) public view returns (uint balance){
-        return ERC20(latched_contract).balanceOf(tokenOwner);
-    }
-    
-    function totalSupply() public view returns (uint){
-        return ERC20(latched_contract).totalSupply();
-    }
-    
-    function transfer(address target, uint qty) private{
-        ERC20(latched_contract).transfer(target, qty);
     }
     
 	function getFee() public view returns (uint){
@@ -194,10 +251,12 @@ contract ERC20TokenLatch {
 	
 	
 	function sell(uint tokens)public{
-	    require(ERC20(latched_contract).allowance(msg.sender, address(this))>=tokens);
+	    require(balanceOf(msg.sender)>=tokens);
 		
 		// handle fee and any extra funds
-		ERC20(latched_contract).transferFrom(msg.sender,address(this),tokens);
+		balances[msg.sender]-=tokens;
+		balances[address(this)]+=tokens;
+		emit Transfer(msg.sender, address(this), tokens);
 		
 		// get info needed for trading
 	    uint64 sell_price = getSellPrice();
@@ -293,13 +352,16 @@ contract ERC20TokenLatch {
 	}   
 	
 	function placeSellOrder(uint tokens, uint64 price10000) public{
-	    require(ERC20(latched_contract).allowance(msg.sender, address(this))>=tokens);
+	    require(balanceOf(msg.sender)>=tokens);
 		
 		// handle fee and any extra funds
-		ERC20(latched_contract).transferFrom(msg.sender,address(this),tokens);
+		balances[msg.sender]-=tokens;
+		balances[address(this)]+=tokens;
+		emit Transfer(msg.sender, address(this), tokens);
 		
 		// get info needed for trading
 	    uint left = tokens;
+	    //}/*
 	    
 		// now try to fulfill the order
 		for(uint32 i=0;i<num_buy_orders;i++){
@@ -338,7 +400,7 @@ contract ERC20TokenLatch {
 		
 		// if we are here then some of the order is left.  Place the order in the queue.
 		addSellOrder(msg.sender, left, price10000);
-	}
+	}//*/
     
     function canBuy(uint amount) public pure returns (bool possible){			// returns true if this amount of token can be bought - does not account for Ethereum account balance
         return true;
@@ -349,7 +411,7 @@ contract ERC20TokenLatch {
     }
 	
 	function get_tradable() public view returns (uint){
-        return ERC20(latched_contract).totalSupply();
+        return totalSupply();
     }
 	
 	function setFee(uint new_fee) public{
@@ -357,10 +419,7 @@ contract ERC20TokenLatch {
 	    fee=new_fee;
 	}
 	
-	function destroy() public {
-	    require(msg.sender==owner);
-	    require(address(this).balance<0.1 ether);
-	    require(ERC20(latched_contract).balanceOf(address(this))==0);
-	    selfdestruct(msg.sender);
+	function getAllowed() public view returns (uint){
+	    return allowance(msg.sender, address(this));
 	}
 }

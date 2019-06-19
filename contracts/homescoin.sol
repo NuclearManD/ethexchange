@@ -41,7 +41,7 @@ contract HomesCoin is ERC20Interface {
 		_totalSupply = 10000000 * 10**uint(decimals);
 		owner = msg.sender;
 		balances[address(this)] = _totalSupply;
-		emit Transfer(address(0), owner, _totalSupply);
+		emit Transfer(address(0), address(this), _totalSupply);
 		base_price=100000;
 		oracle_adr = address(uint160(owner));
 		min_balance = .02 ether;
